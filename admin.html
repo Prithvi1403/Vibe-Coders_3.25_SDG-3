@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid Care - City Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            padding-top: 90px; /* Space for fixed header */
+        }
+        
+        /* Fixed Header Styles */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            z-index: 1000;
+            border-bottom: 3px solid #c62828;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-right: 40px;
+        }
+        
+        .logo i {
+            font-size: 32px;
+            margin-right: 12px;
+            color: #c62828;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #c62828;
+        }
+        
+        .logo span {
+            color: #ff6b6b;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-menu li {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .nav-menu li.active, .nav-menu li:hover {
+            background-color: #c62828;
+            color: white;
+        }
+        
+        .nav-menu li i {
+            margin-right: 8px;
+        }
+        
+        .user-info {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .user-details {
+            text-align: right;
+            margin-right: 15px;
+        }
+        
+        .user-details h4 {
+            color: #c62828;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .user-details p {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .user-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #c62828;
+        }
+        
+        .user-dropdown {
+            position: absolute;
+            top: 65px;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            width: 280px;
+            padding: 25px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .user-dropdown.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .user-dropdown-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .user-dropdown-header img {
+            width: 60px;
+            height: 60px;
+            margin-right: 15px;
+            border: 2px solid #c62828;
+        }
+        
+        .user-dropdown-header h3 {
+            margin-bottom: 5px;
+            color: #c62828;
+        }
+        
+        .user-dropdown-header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .user-dropdown hr {
+            border: none;
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 20px 0;
+        }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            color: #555;
+            transition: color 0.2s, transform 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            color: #c62828;
+            transform: translateX(5px);
+        }
+        
+        .dropdown-item i {
+            margin-right: 12px;
+            width: 20px;
+            font-size: 18px;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            padding: 20px 30px;
+        }
+        
+        .page-title {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-title h2 {
+            color: #c62828;
+            font-weight: 600;
+            font-size: 28px;
+        }
+        
+        .page-title p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* Stats Cards */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 5px solid #c62828;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            font-size: 28px;
+            color: white;
+        }
+        
+        .hospital-icon {
+            background: linear-gradient(135deg, #c62828, #ef5350);
+        }
+        
+        .ambulance-icon {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+        }
+        
+        .patient-icon {
+            background: linear-gradient(135deg, #2ecc71, #1abc9c);
+        }
+        
+        .card-content h3 {
+            font-size: 32px;
+            margin-bottom: 5px;
+            color: #c62828;
+        }
+        
+        .card-content p {
+            color: #666;
+            font-size: 15px;
+        }
+        
+        /* Scrollable Lists Section */
+        .lists-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .list-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .list-header {
+            background: linear-gradient(135deg, #c62828, #b71c1c);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .list-header h3 {
+            font-weight: 500;
+            font-size: 18px;
+        }
+        
+        .list-header button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .list-header button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .scrollable-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        
+        /* Hospitals List Styles */
+        .hospital-item {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: background 0.2s;
+        }
+        
+        .hospital-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .hospital-item:last-child {
+            border-bottom: none;
+        }
+        
+        .hospital-info {
+            flex: 1;
+        }
+        
+        .hospital-info h4 {
+            color: #c62828;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .hospital-address {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            line-height: 1.5;
+        }
+        
+        .hospital-address i {
+            margin-right: 8px;
+            color: #c62828;
+            margin-top: 2px;
+        }
+        
+        .hospital-beds {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        /* Ambulances List Styles */
+        .ambulance-item {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .ambulance-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .ambulance-item:last-child {
+            border-bottom: none;
+        }
+        
+        .ambulance-info {
+            flex: 1;
+        }
+        
+        .ambulance-info h4 {
+            color: #c62828;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .ambulance-details {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .ambulance-details i {
+            margin-right: 8px;
+            color: #c62828;
+        }
+        
+        .patient-count {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 18px;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        /* Scrollbar Styling */
+        .scrollable-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-thumb {
+            background: #c62828;
+            border-radius: 4px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-thumb:hover {
+            background: #b71c1c;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 25px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .lists-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .header {
+                flex-wrap: wrap;
+                padding: 15px;
+            }
+            
+            .nav-menu {
+                order: 3;
+                width: 100%;
+                margin-top: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .nav-menu li {
+                margin: 5px;
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+            
+            body {
+                padding-top: 130px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .lists-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .list-container {
+                height: 400px;
+            }
+            
+            .header-left {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .logo {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            body {
+                padding-top: 150px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .user-details {
+                display: none;
+            }
+            
+            .page-title {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .page-title p {
+                margin-top: 10px;
+            }
+            
+            .hospital-item, .ambulance-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .hospital-beds, .patient-count {
+                align-self: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fixed Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">
+                <i class="fas fa-ambulance"></i>
+                <h1>Rapid<span>Care</span></h1>
+            </div>
+            <ul class="nav-menu">
+                
+            </ul>
+        </div>
+        
+        <div class="user-info" id="userInfo">
+            <div class="user-details">
+                <h4>City Administrator</h4>
+                <p>Metro City</p>
+            </div>
+            <img src="https://ui-avatars.com/api/?name=City+Admin&background=c62828&color=fff&size=150" alt="User Avatar">
+            <div class="user-dropdown" id="userDropdown">
+                <div class="user-dropdown-header">
+                    <img src="https://ui-avatars.com/api/?name=City+Admin&background=c62828&color=fff&size=150" alt="User Avatar">
+                    <div>
+                        <h3>City Administrator</h3>
+                        <p>admin@metrocity.gov</p>
+                        <p>Metro City</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="dropdown-item">
+                    <i class="fas fa-user"></i>
+                    <span>My Profile</span>
+                </div>
+                <div class="dropdown-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Account Settings</span>
+                </div>
+                <div class="dropdown-item">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </div>
+                <div class="dropdown-item">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Help & Support</span>
+                </div>
+                <hr>
+                <div class="dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Title -->
+        <div class="page-title">
+            <div>
+                <h2>City Emergency Services Dashboard</h2>
+                <p>Monitor hospitals and ambulance services across Metro City</p>
+            </div>
+            <div>
+                <p id="currentDateTime"></p>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="card">
+                <div class="card-icon hospital-icon">
+                    <i class="fas fa-hospital"></i>
+                </div>
+                <div class="card-content">
+                    <h3>24</h3>
+                    <p>Total Hospitals</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon ambulance-icon">
+                    <i class="fas fa-ambulance"></i>
+                </div>
+                <div class="card-content">
+                    <h3>48</h3>
+                    <p>Total Ambulances</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon patient-icon">
+                    <i class="fas fa-user-injured"></i>
+                </div>
+                <div class="card-content">
+                    <h3>1,248</h3>
+                    <p>Patients Today</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon" style="background: linear-gradient(135deg, #9c27b0, #e91e63);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="card-content">
+                    <h3>8.2 min</h3>
+                    <p>Avg. Response Time</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scrollable Lists Section -->
+        <div class="lists-section">
+            <!-- Hospitals List -->
+            <div class="list-container">
+                <div class="list-header">
+                    <h3><i class="fas fa-hospital"></i> Hospitals List</h3>
+                    <button id="refreshHospitals">Refresh Data</button>
+                </div>
+                <div class="scrollable-list" id="hospitalsList">
+                    <!-- Hospital items will be inserted here by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Ambulances List -->
+            <div class="list-container">
+                <div class="list-header">
+                    <h3><i class="fas fa-ambulance"></i> Ambulances List</h3>
+                    <button id="refreshAmbulances">Refresh Data</button>
+                </div>
+                <div class="scrollable-list" id="ambulancesList">
+                    <!-- Ambulance items will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Rapid Care City Admin Dashboard &copy; 2023 | Metro City Emergency Services</p>
+            <p style="margin-top: 10px; font-size: 13px;">Last updated: <span id="lastUpdated"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Hospital Data
+        const hospitals = [
+            { id: 1, name: "Metro General Hospital", address: "123 Health St, Downtown", beds: 450 },
+            { id: 2, name: "City Central Medical", address: "456 Care Ave, Midtown", beds: 320 },
+            { id: 3, name: "Unity Health Center", address: "789 Wellness Blvd, Uptown", beds: 280 },
+            { id: 4, name: "Westside Emergency Hospital", address: "1010 Rescue Rd, Westside", beds: 180 },
+            { id: 5, name: "North Metro Medical", address: "1111 Life Ln, Northside", beds: 220 },
+            { id: 6, name: "Riverside Medical Center", address: "1212 River Dr, Riverside", beds: 310 },
+            { id: 7, name: "Eastside Community Hospital", address: "1313 Hope Ave, Eastside", beds: 190 },
+            { id: 8, name: "South Metro Health", address: "1414 Recovery Rd, Southside", beds: 240 },
+            { id: 9, name: "Children's Mercy Hospital", address: "1515 Kids Way, Midtown", beds: 150 },
+            { id: 10, name: "Cardiac Care Center", address: "1616 Heart Ave, Downtown", beds: 120 },
+            { id: 11, name: "Trauma Center", address: "1717 Emergency Dr, Westside", beds: 90 },
+            { id: 12, name: "Metro Psychiatric Hospital", address: "1818 Mind St, Uptown", beds: 200 }
+        ];
+        
+        // Ambulance Data
+        const ambulances = [
+            { id: "AMB-001", patients: 42 },
+            { id: "AMB-002", patients: 38 },
+            { id: "AMB-003", patients: 51 },
+            { id: "AMB-004", patients: 29 },
+            { id: "AMB-005", patients: 33 },
+            { id: "AMB-006", patients: 47 },
+            { id: "AMB-007", patients: 25 },
+            { id: "AMB-008", patients: 36 },
+            { id: "AMB-009", patients: 41 },
+            { id: "AMB-010", patients: 32 },
+            { id: "AMB-011", patients: 55 },
+            { id: "AMB-012", patients: 28 },
+            { id: "AMB-013", patients: 44 },
+            { id: "AMB-014", patients: 31 },
+            { id: "AMB-015", patients: 39 }
+        ];
+        
+        // Populate Hospitals List
+        function populateHospitalsList() {
+            const listContainer = document.getElementById('hospitalsList');
+            listContainer.innerHTML = '';
+            
+            hospitals.forEach(hospital => {
+                const listItem = document.createElement('div');
+                listItem.className = 'hospital-item';
+                
+                listItem.innerHTML = `
+                    <div class="hospital-info">
+                        <h4>${hospital.name}</h4>
+                        <div class="hospital-address">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${hospital.address}
+                        </div>
+                    </div>
+                    <div class="hospital-beds">${hospital.beds} Beds</div>
+                `;
+                
+                listContainer.appendChild(listItem);
+            });
+        }
+        
+        // Populate Ambulances List
+        function populateAmbulancesList() {
+            const listContainer = document.getElementById('ambulancesList');
+            listContainer.innerHTML = '';
+            
+            // Sort ambulances by patient count (descending)
+            const sortedAmbulances = [...ambulances].sort((a, b) => b.patients - a.patients);
+            
+            sortedAmbulances.forEach(ambulance => {
+                const listItem = document.createElement('div');
+                listItem.className = 'ambulance-item';
+                
+                listItem.innerHTML = `
+                    <div class="ambulance-info">
+                        <h4>${ambulance.id}</h4>
+                        <div class="ambulance-details">
+                            <i class="fas fa-user-injured"></i>
+                            Total patients served
+                        </div>
+                    </div>
+                    <div class="patient-count">${ambulance.patients}</div>
+                `;
+                
+                listContainer.appendChild(listItem);
+            });
+        }
+        
+        // Update current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const dateTimeStr = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            document.getElementById('currentDateTime').textContent = dateTimeStr;
+            document.getElementById('lastUpdated').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // User dropdown functionality
+        document.getElementById('userInfo').addEventListener('click', function() {
+            document.getElementById('userDropdown').classList.toggle('active');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfo');
+            const dropdown = document.getElementById('userDropdown');
+            
+            if (!userInfo.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+        
+        // Refresh buttons functionality
+        document.getElementById('refreshHospitals').addEventListener('click', function() {
+            populateHospitalsList();
+            showNotification("Hospital data refreshed successfully");
+        });
+        
+        document.getElementById('refreshAmbulances').addEventListener('click', function() {
+            // Simulate updating patient counts
+            ambulances.forEach(ambulance => {
+                // Add 0-5 random patients to simulate new data
+                ambulance.patients += Math.floor(Math.random() * 6);
+            });
+            
+            populateAmbulancesList();
+            showNotification("Ambulance data refreshed successfully");
+            
+            // Update total patients count
+            const totalPatients = ambulances.reduce((sum, ambulance) => sum + ambulance.patients, 0);
+            document.querySelector('.patient-icon').parentElement.querySelector('h3').textContent = totalPatients;
+        });
+        
+        // Show notification
+        function showNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 30px;
+                background: #c62828;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 5px 20px rgba(198, 40, 40, 0.2);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+                border-left: 5px solid #ff6b6b;
+                max-width: 350px;
+            `;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center;">
+                    <i class="fas fa-check-circle" style="margin-right: 10px; font-size: 18px;"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Add CSS for notification animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            populateHospitalsList();
+            populateAmbulancesList();
+            updateDateTime();
+            
+            // Update time every minute
+            setInterval(updateDateTime, 60000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid Care - Ambulance Driver Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary-color: #e63946;
+            --secondary-color: #457b9d;
+            --available-color: #2a9d8f;
+            --onduty-color: #e9c46a;
+            --offline-color: #6c757d;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #c1121f);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .user-info .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: white;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Main Content - Updated Layout */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .panel {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f0f0f0;
+            color: var(--secondary-color);
+        }
+
+        .panel-title i {
+            font-size: 1.3rem;
+        }
+
+        /* Driver Info */
+        .driver-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        /* Status Controls - Updated Position */
+        .status-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .status-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .status-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .status-btn.active {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 6px currentColor;
+        }
+
+        .available {
+            background-color: var(--available-color);
+        }
+
+        .onduty {
+            background-color: var(--onduty-color);
+            color: var(--dark-color);
+        }
+
+        .offline {
+            background-color: var(--offline-color);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        .status-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+
+        /* Right Panel Map */
+        .right-map-container {
+            height: 300px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #rightMap {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Patient Info Box */
+        .patient-info-box {
+            display: none; /* Hidden by default, shown when mission active */
+        }
+
+        .patient-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mission-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .accept-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .decline-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Patient Request Popup */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .popup-content {
+            background-color: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: popupAppear 0.3s ease-out;
+        }
+
+        @keyframes popupAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .popup-header {
+            background: linear-gradient(135deg, var(--primary-color), #c1121f);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .popup-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .popup-body {
+            padding: 1.5rem;
+        }
+
+        .popup-map-container {
+            height: 250px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ddd;
+        }
+
+        .popup-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background-color: var(--success-color);
+            color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 999;
+            display: none;
+        }
+
+        .notification.error {
+            background-color: #f44336;
+        }
+
+        /* Map Markers Styling */
+        .driver-marker {
+            color: var(--primary-color);
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .patient-marker {
+            color: #ff6b6b;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .hospital-marker {
+            color: #4caf50;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .panel {
+                padding: 1rem;
+            }
+
+            .status-buttons {
+                flex-direction: column;
+            }
+
+            .mission-actions {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <i class="fas fa-ambulance"></i>
+                <h1>Rapid Care Ambulance</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-details">
+                    <span class="user-name">John Driver</span>
+                    <span class="user-role">Ambulance Driver</span>
+                </div>
+                <div class="avatar">JD</div>
+            </div>
+        </header>
+
+        <!-- Main Content - Updated Layout -->
+        <main class="main-content">
+            <!-- Left Panel -->
+            <div class="left-panel">
+                <!-- Driver Information Panel -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-id-card"></i>
+                        <h2>Driver Information</h2>
+                    </div>
+                    <div class="driver-info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Full Name</span>
+                            <span class="info-value">John Driver</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Ambulance Number</span>
+                            <span class="info-value">AMB-7892</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phone Number</span>
+                            <span class="info-value">+1 (555) 123-4567</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Email Address</span>
+                            <span class="info-value">john.driver@rapidcare.com</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">License Number</span>
+                            <span class="info-value">DL-789456123</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Years of Service</span>
+                            <span class="info-value">5 years</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Control Panel - Now below driver info -->
+                <div class="panel status-controls">
+                    <div class="panel-title">
+                        <i class="fas fa-sliders-h"></i>
+                        <h2>Driver Status</h2>
+                    </div>
+                    <div class="status-buttons">
+                        <button class="status-btn available active" id="availableBtn">
+                            <i class="fas fa-check-circle"></i> Available
+                        </button>
+                        <button class="status-btn onduty" id="onDutyBtn">
+                            <i class="fas fa-shipping-fast"></i> On Duty
+                        </button>
+                        <button class="status-btn offline" id="offlineBtn">
+                            <i class="fas fa-power-off"></i> Offline
+                        </button>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="statusText">Currently Available for emergency calls</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <!-- Map Container -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <h2>Current Location & Navigation</h2>
+                    </div>
+                    <div class="right-map-container">
+                        <div id="rightMap"></div>
+                    </div>
+                </div>
+
+                <!-- Patient Info Box - Hidden by default -->
+                <div class="panel patient-info-box" id="patientInfoBox">
+                    <div class="panel-title">
+                        <i class="fas fa-user-injured"></i>
+                        <h2>Active Mission Details</h2>
+                    </div>
+                    
+                    <div class="patient-details-grid">
+                        <div class="info-item">
+                            <span class="info-label">Patient Name</span>
+                            <span class="info-value" id="patientName">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Patient Address</span>
+                            <span class="info-value" id="patientAddress">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Blood Group</span>
+                            <span class="info-value" id="patientBloodGroup">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Hospital</span>
+                            <span class="info-value" id="patientHospital">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Condition</span>
+                            <span class="info-value" id="patientCondition">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Estimated Time</span>
+                            <span class="info-value" id="patientETA">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Mission Status</span>
+                            <span class="info-value" id="missionStatus">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Distance</span>
+                            <span class="info-value" id="patientDistance">-</span>
+                        </div>
+                    </div>
+
+                    <div class="mission-actions">
+                        <button class="action-btn accept-btn" id="reachedPatientBtn">
+                            <i class="fas fa-user-check"></i> Reached Patient
+                        </button>
+                        <button class="action-btn accept-btn" id="reachedHospitalBtn">
+                            <i class="fas fa-hospital"></i> Reached Hospital
+                        </button>
+                        <button class="action-btn decline-btn" id="cancelMissionBtn">
+                            <i class="fas fa-times"></i> Cancel Mission
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>Rapid Care Ambulance Service &copy; 2023 | 24/7 Emergency Service: 1-800-RAPID-CARE</p>
+        </footer>
+
+        <!-- Patient Request Popup -->
+        <div class="popup-overlay" id="requestPopup">
+            <div class="popup-content">
+                <div class="popup-header">
+                    <h2><i class="fas fa-exclamation-circle"></i> New Emergency Request</h2>
+                    <span class="notification-tag">HIGH PRIORITY</span>
+                </div>
+                <div class="popup-body">
+                    <!-- Map in Popup -->
+                    <div class="popup-map-container" id="popupMap"></div>
+                    
+                    <!-- Patient Information -->
+                    <div class="patient-details-grid">
+                        <div class="info-item">
+                            <span class="info-label">Patient Name</span>
+                            <span class="info-value" id="popupPatientName">Sarah Johnson</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Patient Address</span>
+                            <span class="info-value" id="popupPatientAddress">123 Main St, Springfield</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Blood Group</span>
+                            <span class="info-value" id="popupBloodGroup">O+</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Hospital Address</span>
+                            <span class="info-value" id="popupHospitalAddress">Springfield General Hospital, 456 Oak Ave</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Medical Condition</span>
+                            <span class="info-value" id="popupCondition">Chest Pain & Breathing Difficulty</span>
+                        </div>
+                        <div class="info-label">Distance to Patient</span>
+                        <span class="info-value" id="popupDistance">2.5 miles</span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="popup-actions">
+                        <button class="action-btn accept-btn" id="acceptRequestBtn">
+                            <i class="fas fa-check"></i> Accept Request
+                        </button>
+                        <button class="action-btn decline-btn" id="declineRequestBtn">
+                            <i class="fas fa-times"></i> Decline Request
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification" id="notification">
+            <i class="fas fa-check-circle"></i>
+            <span id="notificationText">Status updated to Available</span>
+        </div>
+    </div>
+
+    <script>
+        // Initialize variables
+        let driverStatus = "available";
+        let rightMap, popupMap;
+        let activeMission = null;
+        let patientLocation = [40.7128, -74.0060]; // Default: New York
+        let hospitalLocation = [40.7580, -73.9855]; // Default: Times Square
+        let driverLocation = [40.7306, -73.9352]; // Default: Brooklyn
+        let routeLayer = null;
+        let driverMarker, patientMarker, hospitalMarker;
+
+        // Initialize the maps
+        function initMaps() {
+            // Right panel map
+            rightMap = L.map('rightMap').setView(driverLocation, 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(rightMap);
+            
+            // Driver marker on right map
+            driverMarker = L.marker(driverLocation, {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-ambulance"></i>',
+                    className: 'driver-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(rightMap).bindPopup("Your Location (Ambulance)");
+            
+            // Popup map
+            popupMap = L.map('popupMap').setView(patientLocation, 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(popupMap);
+            
+            // Add patient and hospital markers to popup map
+            L.marker(patientLocation, {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-user-injured"></i>',
+                    className: 'patient-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(popupMap)
+                .bindPopup("Patient Location")
+                .openPopup();
+                
+            L.marker(hospitalLocation, {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-hospital"></i>',
+                    className: 'hospital-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(popupMap)
+                .bindPopup("Hospital Destination");
+            
+            // Draw route on popup map
+            L.polyline([patientLocation, hospitalLocation], {
+                color: 'red',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(popupMap);
+        }
+
+        // Update status
+        function updateStatus(newStatus) {
+            driverStatus = newStatus;
+            
+            // Update active buttons
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (newStatus === "available") {
+                document.getElementById('availableBtn').classList.add('active');
+                document.getElementById('statusDot').style.backgroundColor = "var(--available-color)";
+                document.getElementById('statusText').textContent = "Currently Available for emergency calls";
+                
+                // Hide patient info box if showing
+                document.getElementById('patientInfoBox').style.display = "none";
+                
+                // Clear any route from map
+                if (routeLayer) {
+                    rightMap.removeLayer(routeLayer);
+                    routeLayer = null;
+                }
+                
+                // Remove patient and hospital markers if present
+                if (patientMarker) {
+                    rightMap.removeLayer(patientMarker);
+                    patientMarker = null;
+                }
+                if (hospitalMarker) {
+                    rightMap.removeLayer(hospitalMarker);
+                    hospitalMarker = null;
+                }
+                
+                // Reset map view to driver location
+                rightMap.setView(driverLocation, 13);
+                
+            } else if (newStatus === "onduty") {
+                document.getElementById('onDutyBtn').classList.add('active');
+                document.getElementById('statusDot').style.backgroundColor = "var(--onduty-color)";
+                document.getElementById('statusText').textContent = "Currently On Duty - Enroute to patient";
+            } else if (newStatus === "offline") {
+                document.getElementById('offlineBtn').classList.add('active');
+                document.getElementById('statusDot').style.backgroundColor = "var(--offline-color)";
+                document.getElementById('statusText').textContent = "Currently Offline - Not accepting calls";
+                
+                // Hide patient info box if showing
+                document.getElementById('patientInfoBox').style.display = "none";
+            }
+            
+            showNotification(`Status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`);
+        }
+
+        // Show notification
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            notificationText.textContent = message;
+            notification.style.display = "flex";
+            
+            if (isError) {
+                notification.classList.add("error");
+            } else {
+                notification.classList.remove("error");
+            }
+            
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 3000);
+        }
+
+        // Show patient request popup
+        function showPatientRequest() {
+            // Only show if driver is available
+            if (driverStatus !== "available") return;
+            
+            // Set random patient data
+            const patients = [
+                {
+                    name: "Sarah Johnson",
+                    address: "123 Main St, Springfield",
+                    bloodGroup: "O+",
+                    hospital: "Springfield General Hospital, 456 Oak Ave",
+                    condition: "Chest Pain & Breathing Difficulty",
+                    distance: "2.5 miles",
+                    eta: "12 minutes"
+                },
+                {
+                    name: "Michael Chen",
+                    address: "789 Park Avenue, Springfield",
+                    bloodGroup: "A-",
+                    hospital: "Memorial Medical Center, 101 Pine St",
+                    condition: "Severe Allergic Reaction",
+                    distance: "3.2 miles",
+                    eta: "15 minutes"
+                },
+                {
+                    name: "Emma Wilson",
+                    address: "456 Elm Street, Springfield",
+                    bloodGroup: "B+",
+                    hospital: "City Central Hospital, 222 Maple Rd",
+                    condition: "Stroke Symptoms",
+                    distance: "1.8 miles",
+                    eta: "8 minutes"
+                }
+            ];
+            
+            const patient = patients[Math.floor(Math.random() * patients.length)];
+            
+            document.getElementById('popupPatientName').textContent = patient.name;
+            document.getElementById('popupPatientAddress').textContent = patient.address;
+            document.getElementById('popupBloodGroup').textContent = patient.bloodGroup;
+            document.getElementById('popupHospitalAddress').textContent = patient.hospital;
+            document.getElementById('popupCondition').textContent = patient.condition;
+            document.getElementById('popupDistance').textContent = patient.distance;
+            
+            // Show popup
+            document.getElementById('requestPopup').style.display = "flex";
+            
+            // Update popup map with random locations near driver
+            const randomPatientLoc = [
+                driverLocation[0] + (Math.random() * 0.05 - 0.025),
+                driverLocation[1] + (Math.random() * 0.05 - 0.025)
+            ];
+            
+            const randomHospitalLoc = [
+                randomPatientLoc[0] + (Math.random() * 0.03 - 0.015),
+                randomPatientLoc[1] + (Math.random() * 0.03 - 0.015)
+            ];
+            
+            // Clear existing layers from popup map
+            popupMap.eachLayer(layer => {
+                if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+                    popupMap.removeLayer(layer);
+                }
+            });
+            
+            // Add new markers to popup map
+            L.marker(randomPatientLoc, {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-user-injured"></i>',
+                    className: 'patient-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(popupMap)
+                .bindPopup("Patient Location")
+                .openPopup();
+                
+            L.marker(randomHospitalLoc, {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-hospital"></i>',
+                    className: 'hospital-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(popupMap)
+                .bindPopup("Hospital Destination");
+            
+            // Draw route on popup map
+            L.polyline([randomPatientLoc, randomHospitalLoc], {
+                color: 'red',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(popupMap);
+            
+            popupMap.setView(randomPatientLoc, 13);
+            
+            // Store for mission
+            activeMission = {
+                patient: patient.name,
+                address: patient.address,
+                bloodGroup: patient.bloodGroup,
+                hospital: patient.hospital,
+                condition: patient.condition,
+                distance: patient.distance,
+                eta: patient.eta,
+                patientLocation: randomPatientLoc,
+                hospitalLocation: randomHospitalLoc
+            };
+        }
+
+        // Accept patient request
+        function acceptRequest() {
+            if (!activeMission) return;
+            
+            // Close popup
+            document.getElementById('requestPopup').style.display = "none";
+            
+            // Update status
+            updateStatus("onduty");
+            
+            // Show patient info box
+            document.getElementById('patientInfoBox').style.display = "block";
+            
+            // Update patient info in the box
+            document.getElementById('patientName').textContent = activeMission.patient;
+            document.getElementById('patientAddress').textContent = activeMission.address;
+            document.getElementById('patientBloodGroup').textContent = activeMission.bloodGroup;
+            document.getElementById('patientHospital').textContent = activeMission.hospital;
+            document.getElementById('patientCondition').textContent = activeMission.condition;
+            document.getElementById('patientDistance').textContent = activeMission.distance;
+            document.getElementById('patientETA').textContent = activeMission.eta;
+            document.getElementById('missionStatus').textContent = "Enroute to patient";
+            
+            // Draw route on right map
+            if (routeLayer) {
+                rightMap.removeLayer(routeLayer);
+            }
+            
+            routeLayer = L.polyline([driverLocation, activeMission.patientLocation, activeMission.hospitalLocation], {
+                color: 'blue',
+                weight: 5,
+                opacity: 0.7
+            }).addTo(rightMap);
+            
+            // Add markers to right map
+            patientMarker = L.marker(activeMission.patientLocation, {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-user-injured"></i>',
+                    className: 'patient-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(rightMap)
+                .bindPopup("Patient Location");
+                
+            hospitalMarker = L.marker(activeMission.hospitalLocation, {
+                icon: L.divIcon({
+                    html: '<i class="fas fa-hospital"></i>',
+                    className: 'hospital-marker',
+                    iconSize: [30, 30]
+                })
+            }).addTo(rightMap)
+                .bindPopup("Hospital Destination");
+            
+            // Update driver marker to show it's moving
+            driverMarker.setLatLng(driverLocation);
+            
+            // Fit map to show entire route
+            const bounds = L.latLngBounds([driverLocation, activeMission.patientLocation, activeMission.hospitalLocation]);
+            rightMap.fitBounds(bounds, { padding: [30, 30] });
+            
+            showNotification("Mission accepted! Navigating to patient location.");
+        }
+
+        // Decline patient request
+        function declineRequest() {
+            document.getElementById('requestPopup').style.display = "none";
+            showNotification("Request declined. You will remain available for new requests.");
+            activeMission = null;
+        }
+
+        // Simulate patient requests randomly (for demo purposes)
+        function simulatePatientRequest() {
+            // Only simulate if available
+            if (driverStatus === "available") {
+                // 30% chance every 10 seconds
+                if (Math.random() < 0.3) {
+                    showPatientRequest();
+                }
+            }
+            
+            // Schedule next simulation
+            setTimeout(simulatePatientRequest, 10000);
+        }
+
+        // Mission control functions
+        function reachedPatient() {
+            if (!activeMission) return;
+            
+            document.getElementById('missionStatus').textContent = "Patient onboard - Heading to hospital";
+            document.getElementById('patientETA').textContent = "8 minutes";
+            
+            // Update route on map
+            if (routeLayer) {
+                rightMap.removeLayer(routeLayer);
+            }
+            
+            routeLayer = L.polyline([activeMission.patientLocation, activeMission.hospitalLocation], {
+                color: 'green',
+                weight: 5,
+                opacity: 0.7
+            }).addTo(rightMap);
+            
+            // Move driver marker to patient location
+            driverLocation = [...activeMission.patientLocation];
+            driverMarker.setLatLng(driverLocation);
+            
+            // Update map view
+            const bounds = L.latLngBounds([driverLocation, activeMission.hospitalLocation]);
+            rightMap.fitBounds(bounds, { padding: [30, 30] });
+            
+            showNotification("Patient onboard. Heading to hospital.");
+        }
+
+        function reachedHospital() {
+            if (!activeMission) return;
+            
+            document.getElementById('missionStatus').textContent = "Mission Completed";
+            document.getElementById('patientETA').textContent = "0 minutes";
+            
+            // Move driver marker to hospital location
+            driverLocation = [...activeMission.hospitalLocation];
+            driverMarker.setLatLng(driverLocation);
+            
+            // Update map view to show hospital
+            rightMap.setView(driverLocation, 15);
+            
+            showNotification("Mission completed! Hospital reached successfully.");
+            
+            // Reset mission after delay
+            setTimeout(() => {
+                document.getElementById('patientInfoBox').style.display = "none";
+                updateStatus("available");
+                activeMission = null;
+                
+                // Clear route and markers
+                if (routeLayer) {
+                    rightMap.removeLayer(routeLayer);
+                    routeLayer = null;
+                }
+                
+                if (patientMarker) {
+                    rightMap.removeLayer(patientMarker);
+                    patientMarker = null;
+                }
+                
+                if (hospitalMarker) {
+                    rightMap.removeLayer(hospitalMarker);
+                    hospitalMarker = null;
+                }
+                
+                // Reset map view to driver location
+                rightMap.setView(driverLocation, 13);
+                
+                showNotification("Mission completed. You are now available for new requests.");
+            }, 3000);
+        }
+
+        function cancelMission() {
+            if (!activeMission) return;
+            
+            if (confirm("Are you sure you want to cancel this mission?")) {
+                document.getElementById('patientInfoBox').style.display = "none";
+                updateStatus("available");
+                activeMission = null;
+                
+                // Clear route and markers
+                if (routeLayer) {
+                    rightMap.removeLayer(routeLayer);
+                    routeLayer = null;
+                }
+                
+                if (patientMarker) {
+                    rightMap.removeLayer(patientMarker);
+                    patientMarker = null;
+                }
+                
+                if (hospitalMarker) {
+                    rightMap.removeLayer(hospitalMarker);
+                    hospitalMarker = null;
+                }
+                
+                // Reset map view to driver location
+                rightMap.setView(driverLocation, 13);
+                
+                showNotification("Mission cancelled. You are now available for new requests.");
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize maps
+            initMaps();
+            
+            // Status button events
+            document.getElementById('availableBtn').addEventListener('click', () => updateStatus("available"));
+            document.getElementById('onDutyBtn').addEventListener('click', () => updateStatus("onduty"));
+            document.getElementById('offlineBtn').addEventListener('click', () => updateStatus("offline"));
+            
+            // Request popup events
+            document.getElementById('acceptRequestBtn').addEventListener('click', acceptRequest);
+            document.getElementById('declineRequestBtn').addEventListener('click', declineRequest);
+            
+            // Mission control events
+            document.getElementById('reachedPatientBtn').addEventListener('click', reachedPatient);
+            document.getElementById('reachedHospitalBtn').addEventListener('click', reachedHospital);
+            document.getElementById('cancelMissionBtn').addEventListener('click', cancelMission);
+            
+            // Close popup when clicking outside
+            document.getElementById('requestPopup').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = "none";
+                }
+            });
+            
+            // Simulate patient requests
+            setTimeout(simulatePatientRequest, 5000);
+            
+            // Show a demo request after 3 seconds (for demo purposes)
+            setTimeout(() => {
+                showPatientRequest();
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
